@@ -21,7 +21,7 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   # Add all your custom messages files here for compilation
-  # e.g. "msg/[message_name].msg",
+  msg/Message.msg
   
 )
 
