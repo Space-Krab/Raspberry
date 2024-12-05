@@ -16,7 +16,7 @@ class TrajectorySubscriber(Node):
         self.subscription
         self.speed: int = 0
         self.direction: int = 0
-        self.ser = serial.Serial('/dev/tty.usbserial-10', 9600, timeout=1)
+        self.ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
         self.ser.reset_input_buffer()
         self.get_logger().info('Subscriber node has been started.')
 
@@ -26,16 +26,16 @@ class TrajectorySubscriber(Node):
         self.direction = msg.x
         if msg.speed == 1:
             self.speed = self.speed + 10 if self.speed < 255 else 255
-            msgToDisplay == "Speed Up"
+            msgToDisplay = "Speed Up"
         elif msg.speed == -1:
             self.speed = self.speed - 10 if self.speed > 0 else 0
-            msgToDisplay == "Slow down"
-        if msg.x == -1:
+            msgToDisplay = "Slow down"
+        if msg.x == 255:
             self.speed = 0
-            msgToDisplay == "Stop"
+            msgToDisplay = "Stop"
         self.get_logger().info(msgToDisplay)
-        self.ser.write(self.speed.to_bytes(1))
-        self.ser.write(self.direction.to_bytes(1))
+        self.ser.write(self.speed.to_bytes(1, 'little'))
+        self.ser.write(self.direction.to_bytes(1, 'little'))
         self.get_logger().info(f'Computer : {self.speed} {self.direction}')
         self.get_logger().info(self.ser.readline().decode('utf-8').rstrip())
         
