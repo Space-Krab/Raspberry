@@ -1,2 +1,2 @@
-Twist position
+int32 x
 int32 speed

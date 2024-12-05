@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Twist
+from custom_msg.msg import Command
+import serial
 
 class TrajectorySubscriber(Node):
 
@@ -8,38 +9,37 @@ class TrajectorySubscriber(Node):
         super().__init__('trajectory_subscriber')
         # TODO: Create a subscriber of type Twist, that calls listener_callback
         self.subscription = self.create_subscription(
-            Twist,
+            Command,
             'topic',
             self.listener_callback,
             10)
         self.subscription
+        self.speed: int = 0
+        self.direction: int = 0
+        self.ser = serial.Serial('/dev/tty.usbserial-10', 9600, timeout=1)
+        self.ser.reset_input_buffer()
         self.get_logger().info('Subscriber node has been started.')
-        self.position = {'x': 0.0, 'z': 0.0, 'ry': 0.0}
 
     def listener_callback(self, msg):
         # TODO: Interpret the received commands and log the result using self.get_logger().info()
         msgToDisplay = ""
-        if msg.linear.x != 0:
-            if msg.linear.z != 0:
-                msgToDisplay = "Forbidden move"
-            if msg.angular.y != 0:
-                msgToDisplay = "Go " + ("Left" if msg.angular.y > 0 else "Right")
-            else:
-                msgToDisplay = "Go " + ("Forward" if msg.linear.x > 0 else "Backward")
-        elif msg.linear.z != 0:
-            if msg.angular.y != 0:
-                msgToDisplay = "Forbidden move"
-            else:
-                msgToDisplay = "Slide " + ("Right" if msg.linear.z > 0 else "Left")
-        elif msg.angular.y != 0:
-            msgToDisplay = "Rotating on itself to the " + ("Left" if msg.angular.y > 0 else "Right")
-        if msgToDisplay != "Forbidden move":
-            self.position['x'] += msg.linear.x
-            self.position['ry'] += msg.angular.y
-            self.position['z'] += msg.linear.z
+        self.direction = msg.x
+        if msg.speed == 1:
+            self.speed = self.speed + 10 if self.speed < 255 else 255
+            msgToDisplay == "Speed Up"
+        elif msg.speed == -1:
+            self.speed = self.speed - 10 if self.speed > 0 else 0
+            msgToDisplay == "Slow down"
+        if msg.x == -1:
+            self.speed = 0
+            msgToDisplay == "Stop"
         self.get_logger().info(msgToDisplay)
-        self.get_logger().info("New Position: x: {x}, z: {z}, ry: {ry}".format(x = self.position['x'], z = self.position['z'], ry = self.position['ry']))
-
+        self.ser.write(self.speed.to_bytes(1))
+        self.ser.write(self.direction.to_bytes(1))
+        self.get_logger().info(f'Computer : {self.speed} {self.direction}')
+        self.get_logger().info(self.ser.readline().decode('utf-8').rstrip())
+        
+        
 def main(args=None):
     rclpy.init(args=args)
     node = TrajectorySubscriber()
