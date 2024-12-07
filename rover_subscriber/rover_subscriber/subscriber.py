@@ -25,13 +25,12 @@ class TrajectorySubscriber(Node):
         msgToDisplay = ""
         self.direction = msg.x
         if msg.speed == 1:
-            self.speed = self.speed + 10 if self.speed < 255 else 255
+            self.speed = self.speed + 16 if self.speed + 16 < 255 else 255
             msgToDisplay = "Speed Up"
         elif msg.speed == -1:
-            self.speed = self.speed - 10 if self.speed > 0 else 0
+            self.speed = self.speed - 16 if self.speed - 16 > 0 else 0
             msgToDisplay = "Slow down"
         if msg.x == 255:
-            self.speed = 0
             msgToDisplay = "Stop"
         self.get_logger().info(msgToDisplay)
         self.ser.write(self.speed.to_bytes(1, 'little'))
