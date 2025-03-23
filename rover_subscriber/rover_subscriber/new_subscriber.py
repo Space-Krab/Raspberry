@@ -34,8 +34,16 @@ class TrajectorySubscriber(Node):
 
     def listener_callback(self, msg):
         x = msg.axes[0] # x-axis of left joystick
+        if x < -1:
+            x = -1
+        elif x > 1:
+            x = 1
         y = msg.axes[1] # y-axis of left joystick
-        speed = sqrt(x^2 + y^2)
+        if y < -1:
+            y = -1
+        elif y > 1:
+            y = 1
+        speed = sqrt(x**2 + y**2)
         
         #DIRECTION ASSIGNMENT
         if (x < 0 and y >= -0.2 * x) or (x >= 0 and y >= 0.2 * x):
@@ -71,16 +79,16 @@ class TrajectorySubscriber(Node):
         
         
     def set_ahead(self):
-        self.rf_direction = -1
+        self.rf_direction = 255
         self.lf_direction = 1
-        self.rb_direction = -1
+        self.rb_direction = 255
         self.lb_direction = 1
         
     def set_backward(self):
         self.rf_direction = 1
-        self.lf_direction = -1
+        self.lf_direction = 255
         self.rb_direction = 1
-        self.lb_direction = -1
+        self.lb_direction = 255
     
     def set_right(self):
         self.rf_direction = 1
@@ -89,10 +97,10 @@ class TrajectorySubscriber(Node):
         self.lb_direction = 1
         
     def set_left(self):
-        self.rf_direction = -1
-        self.lf_direction = -1
-        self.rb_direction = -1
-        self.lb_direction = -1
+        self.rf_direction = 255
+        self.lf_direction = 255
+        self.rb_direction = 255
+        self.lb_direction = 255
         
     def set_same_speed(self, speed):
         new_speed = round(speed * 255)
