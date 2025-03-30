@@ -1,3 +1,4 @@
+"""
 import rclpy
 from rclpy.node import Node
 from custom_msg.msg import Command
@@ -48,3 +49,4 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+"""
