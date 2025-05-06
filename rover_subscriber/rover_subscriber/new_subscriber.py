@@ -162,8 +162,9 @@ class TrajectorySubscriber(Node):
         
         #the inside the turn wheels' speeds are multiplied by a 
         # factor (1 - abs(x)) bounded by 0 and 1, meaning they will 
-        # be slowed the more sharply we want to turn
-        diff_weighted_speed = round(speed * 255 * (1 - abs(x)))
+        # be slowed the more sharply we want to turn, and an additional
+        # factor to slow even more the speed of the wheels
+        diff_weighted_speed = round(speed * 255 * (1 - abs(x)) * 0.5)
         
         if x > 0: #turn left
             self.rf_speed = weighted_speed
