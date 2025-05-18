@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'subscriber = rover_subscriber.new_subscriber:main',
+            'live_subscriber = rover_subscriber.new_subscriber:main',
+            'subscriber = rover_subscriber.subscriber:main',
         ],
     },
 )
