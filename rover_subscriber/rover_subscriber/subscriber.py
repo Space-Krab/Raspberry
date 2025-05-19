@@ -7,7 +7,7 @@ import serial
 from math import sqrt
 
 WHEEL_DIAMETER_CM = 11.4
-TICKS_PER_REV = 20
+TICKS_PER_REV = 11
 WHEEL_BASE_CM = 27.3
 
 QOS_PROFILE_JOY = QoSProfile(
@@ -63,6 +63,7 @@ class TrajectorySubscriber(Node):
     def read_serial(self):
         try:
             line = self.ser.readline().decode().strip()  # e.g., "FL:120,FR:122"
+            self.get_logger().info(line)
             if not line.startswith("FL"):
                 return
             fl_ticks = int(line.split(",")[0].split(":")[1])
@@ -122,7 +123,7 @@ class TrajectorySubscriber(Node):
     def listener_callback(self, msg):
         buttons = msg.buttons
 
-        # Toggle mode (triangle = index 12)
+        # Toggle mode
         if buttons[2] == 1 and self.prev_triangle == 0:
             self.autonomous_mode = not self.autonomous_mode
             mode = "autonome" if self.autonomous_mode else "manuel"
@@ -210,6 +211,7 @@ class TrajectorySubscriber(Node):
         msg = String()
         msg.data = "OK"
         self.publisher.publish(msg)
+        self.get_logger().info("Finishing step")
         self.curr_rotation = 0
         self.curr_distance = 0
         
