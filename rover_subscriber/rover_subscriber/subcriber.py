@@ -1,28 +1,40 @@
 import rclpy
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy
 from rclpy.node import Node
 from sensor_msgs.msg import Joy
 from std_msgs.msg import String
 import serial
 from math import sqrt
 
-WHEEL_DIAMETER_CM = 6.6
+WHEEL_DIAMETER_CM = 11.4
 TICKS_PER_REV = 20
 WHEEL_BASE_CM = 27.3
+
+QOS_PROFILE_JOY = QoSProfile(
+    reliability=QoSReliabilityPolicy.BEST_EFFORT,
+    depth=1
+)
+
+QOS_PROFILE_ODOM = QoSProfile(
+    reliability=QoSReliabilityPolicy.RELIABLE,
+    depth=10
+)
 
 class TrajectorySubscriber(Node):
 
     def __init__(self):
-        super().__init__('trajectory_subscriber') #node name and instanciation
+        super().__init__('trajectory_subscriber')
         
         self.subscription = self.create_subscription(
-            Joy, #receive Joy messages
-            '/cmd_vel', #topic name to subscribe to
-            self.listener_callback, #method to call when receiving a message
-            10)
+            Joy,
+            '/cmd_vel', 
+            self.listener_callback,
+            QOS_PROFILE_JOY)
         
-        self.publisher = self.create_publisher(String, '/odom', 2)
+        self.publisher = self.create_publisher(String, '/odom', QOS_PROFILE_ODOM)
         
         self.autonomous_mode = False
+        self.prev_triangle = 0
         self.prev_fl = 0
         self.prev_fr = 0
         self.curr_rotation = 0
@@ -111,7 +123,7 @@ class TrajectorySubscriber(Node):
         buttons = msg.buttons
 
         # Toggle mode (triangle = index 12)
-        if buttons[3] == 1 and self.prev_buttons[3] == 0:
+        if buttons[2] == 1 and self.prev_triangle == 0:
             self.autonomous_mode = not self.autonomous_mode
             mode = "autonome" if self.autonomous_mode else "manuel"
             self.get_logger().info(f"Mode changé : {mode}")
@@ -169,6 +181,8 @@ class TrajectorySubscriber(Node):
             
         #DATA SENDING
         self.send_data()
+        
+        self.prev_triangle = buttons[2]
         
         #LOGS PRINTING
         if (x < 0 and y >= 0.2 * x and y <= -0.2 * x):
