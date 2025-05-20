@@ -91,6 +91,7 @@ class TrajectorySubscriber(Node):
                 self.curr_distance += distance_cm
                 self.curr_rotation += angle_deg
                 self.get_logger().info(f"Curr: distance = {distance_cm:.2f} cm, Curr rotation = {angle_deg:.2f}°")
+                self.get_logger().info(self.curr_command)
                 if self.curr_command == "up":
                     if self.curr_distance >= 30:
                         self.finish_step()
@@ -220,32 +221,23 @@ class TrajectorySubscriber(Node):
         self.curr_distance = 0
         
     def send_data(self):
-        self.get_logger().info("SENT INFO")
-        self.get_logger().info(str(self.lf_speed))
-        self.get_logger().info(str(self.lf_direction))
         self.ser.write(self.lf_speed.to_bytes(1, 'little'))
         self.ser.write(self.lf_direction.to_bytes(1, 'little')) #FRONT LEFT WHEEL
-        
-        self.get_logger().info(str(self.rf_speed))
-        self.get_logger().info(str(self.rf_direction))
+
         self.ser.write(self.rf_speed.to_bytes(1, 'little'))
         self.ser.write(self.rf_direction.to_bytes(1, 'little')) #FRONT RIGHT WHEEL
         
-        self.get_logger().info(str(self.rb_speed))
-        self.get_logger().info(str(self.rb_direction))
         self.ser.write(self.rb_speed.to_bytes(1, 'little'))
         self.ser.write(self.rb_direction.to_bytes(1, 'little')) #BACK RIGHT WHEEL
         
-        self.get_logger().info(str(self.lb_speed))
-        self.get_logger().info(str(self.lb_direction))
         self.ser.write(self.lb_speed.to_bytes(1, 'little'))
         self.ser.write(self.lb_direction.to_bytes(1, 'little')) #BACK LEFT WHEEL
         
         self.get_logger().info("RECEIVED INFO")
-        self.get_logger().info(self.ser.readline().decode().strip())
-        self.get_logger().info(self.ser.readline().decode().strip())
-        self.get_logger().info(self.ser.readline().decode().strip())
-        self.get_logger().info(self.ser.readline().decode().strip())
+        self.ser.readline().decode().strip()
+        self.ser.readline().decode().strip()
+        self.ser.readline().decode().strip()
+        self.ser.readline().decode().strip()
 
         
     def set_ahead(self):
