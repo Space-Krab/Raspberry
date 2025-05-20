@@ -91,7 +91,6 @@ class TrajectorySubscriber(Node):
             
             self.get_logger().info(f"Moved: {distance_cm:.2f} cm, Rotated: {angle_deg:.2f}°")
             
-            self.get_logger().info(str(self.autonomous_mode))
             if self.autonomous_mode:
                 self.curr_distance += distance_cm
                 self.curr_rotation += angle_deg
@@ -142,8 +141,7 @@ class TrajectorySubscriber(Node):
 
     def listener_callback(self, msg):
         if self.autonomous_mode:
-            self.get_logger().info("Trying to assign command")
-            self.get_logger().info(f"y = {msg.axes[1]}, x = {msg.axes[0]}")
+            self.get_logger().info("Assigning new command")
             if msg.axes[1] == 1.0:
                 self.curr_command = "up"
             elif msg.axes[1] == -1.0:
@@ -224,36 +222,36 @@ class TrajectorySubscriber(Node):
         msg.data = "OK"
         self.publisher.publish(msg)
         self.get_logger().info(f"Finishing step {self.curr_command}")
+        
+        self.rf_direction = 0 #FRONT RIGHT WHEEL
+        self.rf_speed = 0
+        
+        self.lf_direction = 0 #FRONT LEFT WHEEL
+        self.lf_speed = 0
+        
+        self.rb_direction = 0 #BACK RIGHT WHEEL
+        self.rb_speed = 0
+        
+        self.lb_speed = 0 #BACK LEFT WHEEL
+        self.lb_direction = 0
+        
+        self.send_data()
+        
         self.curr_rotation = 0
         self.curr_distance = 0
         
     def send_data(self):
-        self.get_logger().info("SENT INFO")
-        self.get_logger().info(str(self.lf_speed))
-        self.get_logger().info(str(self.lf_direction))
         self.ser.write(self.lf_speed.to_bytes(1, 'little'))
         self.ser.write(self.lf_direction.to_bytes(1, 'little')) #FRONT LEFT WHEEL
 
-        self.get_logger().info(str(self.rf_speed))
-        self.get_logger().info(str(self.rf_direction))
         self.ser.write(self.rf_speed.to_bytes(1, 'little'))
         self.ser.write(self.rf_direction.to_bytes(1, 'little')) #FRONT RIGHT WHEEL
         
-        self.get_logger().info(str(self.rb_speed))
-        self.get_logger().info(str(self.rb_direction))
         self.ser.write(self.rb_speed.to_bytes(1, 'little'))
         self.ser.write(self.rb_direction.to_bytes(1, 'little')) #BACK RIGHT WHEEL
         
-        self.get_logger().info(str(self.lb_speed))
-        self.get_logger().info(str(self.lb_direction))
         self.ser.write(self.lb_speed.to_bytes(1, 'little'))
         self.ser.write(self.lb_direction.to_bytes(1, 'little')) #BACK LEFT WHEEL
-        
-        self.get_logger().info("RECEIVED INFO")
-        self.get_logger().info(self.ser.readline().decode().strip())
-        self.get_logger().info(self.ser.readline().decode().strip())
-        self.get_logger().info(self.ser.readline().decode().strip())
-        self.get_logger().info(self.ser.readline().decode().strip())
 
         
     def set_ahead(self):
