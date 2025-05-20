@@ -221,15 +221,24 @@ class TrajectorySubscriber(Node):
         self.curr_distance = 0
         
     def send_data(self):
+        self.get_logger().info("SENT INFO")
+        self.get_logger().info(str(self.lf_speed))
+        self.get_logger().info(str(self.lf_direction))
         self.ser.write(self.lf_speed.to_bytes(1, 'little'))
         self.ser.write(self.lf_direction.to_bytes(1, 'little')) #FRONT LEFT WHEEL
 
+        self.get_logger().info(str(self.rf_speed))
+        self.get_logger().info(str(self.rf_direction))
         self.ser.write(self.rf_speed.to_bytes(1, 'little'))
         self.ser.write(self.rf_direction.to_bytes(1, 'little')) #FRONT RIGHT WHEEL
         
+        self.get_logger().info(str(self.rb_speed))
+        self.get_logger().info(str(self.rb_direction))
         self.ser.write(self.rb_speed.to_bytes(1, 'little'))
         self.ser.write(self.rb_direction.to_bytes(1, 'little')) #BACK RIGHT WHEEL
         
+        self.get_logger().info(str(self.lb_speed))
+        self.get_logger().info(str(self.lb_direction))
         self.ser.write(self.lb_speed.to_bytes(1, 'little'))
         self.ser.write(self.lb_direction.to_bytes(1, 'little')) #BACK LEFT WHEEL
         
