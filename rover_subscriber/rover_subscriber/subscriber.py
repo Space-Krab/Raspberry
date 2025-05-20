@@ -67,8 +67,9 @@ class TrajectorySubscriber(Node):
     def read_serial(self):
         try:
             line = self.ser.readline().decode().strip()  # e.g., "FL:120,FR:122"
-            self.ser.reset_input_buffer()
             self.get_logger().info(line)
+            self.ser.reset_input_buffer()
+            self.ser.readline()
             if not line.startswith("FL"):
                 return
             fl_ticks = int(line.split(",")[0].split(":")[1])
