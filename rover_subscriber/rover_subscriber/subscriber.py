@@ -89,6 +89,7 @@ class TrajectorySubscriber(Node):
             
             self.get_logger().info(f"Moved: {distance_cm:.2f} cm, Rotated: {angle_deg:.2f}°")
             
+            self.get_logger().info(str(self.autonomous_mode))
             if self.autonomous_mode:
                 self.curr_distance += distance_cm
                 self.curr_rotation += angle_deg
