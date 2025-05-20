@@ -141,14 +141,14 @@ class TrajectorySubscriber(Node):
         if self.autonomous_mode:
             self.get_logger().info("Trying to assign command")
             self.get_logger().info(f"y = {msg.axes[1]}, x = {msg.axes[0]}")
-            if msg.axes[1] == 1:
-                self.curr_command == "up"
-            elif msg.axes[1] == -1:
-                self.curr_command == "down"
-            elif msg.axes[0] == 1:
-                self.curr_command == "left"
-            elif msg.axes[0] == -1:
-                self.curr_command == "right"
+            if msg.axes[1] == 1.0:
+                self.curr_command = "up"
+            elif msg.axes[1] == -1.0:
+                self.curr_command = "down"
+            elif msg.axes[0] == 1.0:
+                self.curr_command = "left"
+            elif msg.axes[0] == -1.0:
+                self.curr_command = "right"
         
         x = msg.axes[0] # x-axis of left joystick
         
