@@ -25,11 +25,15 @@ class TrajectorySubscriber(Node):
     def __init__(self):
         super().__init__('trajectory_subscriber')
         
-        self.subscription = self.create_subscription(
-            Joy,
-            '/cmd_vel', 
-            self.listener_callback,
-            QOS_PROFILE_JOY)
+        self.subscription = self.create_subscription(Joy, 
+                                                     '/cmd_vel', 
+                                                     self.listener_callback,
+                                                     QOS_PROFILE_JOY)
+        
+        self.subscription2 = self.create_subscription(Joy, 
+                                                      '/joy', 
+                                                      self.mode_listener_callback, 
+                                                      QOS_PROFILE_JOY)
         
         self.publisher = self.create_publisher(String, '/odom', QOS_PROFILE_ODOM)
         
@@ -119,16 +123,19 @@ class TrajectorySubscriber(Node):
                 
         except Exception as e:
             self.get_logger().error(f"Error reading serial: {e}")
-
-    def listener_callback(self, msg):
-        buttons = msg.buttons
+            
+    def mode_listener_callback(self, msg):
+        triangle = msg.buttons[2]
 
         # Toggle mode
-        if buttons[2] == 1 and self.prev_triangle == 0:
+        if triangle == 1 and self.prev_triangle == 0:
             self.autonomous_mode = not self.autonomous_mode
             mode = "autonome" if self.autonomous_mode else "manuel"
             self.get_logger().info(f"Mode changé : {mode}")
         
+        self.prev_triangle = triangle
+
+    def listener_callback(self, msg):
         if self.autonomous_mode:
             if msg.axes[1] == 1:
                 self.curr_command == "up"
@@ -183,8 +190,6 @@ class TrajectorySubscriber(Node):
         #DATA SENDING
         self.send_data()
         
-        self.prev_triangle = buttons[2]
-        
         #LOGS PRINTING
         if (x < 0 and y >= 0.2 * x and y <= -0.2 * x):
             self.get_logger().info("ROTATE RIGHT")
@@ -211,7 +216,7 @@ class TrajectorySubscriber(Node):
         msg = String()
         msg.data = "OK"
         self.publisher.publish(msg)
-        self.get_logger().info("Finishing step")
+        self.get_logger().info(f"Finishing step {self.curr_command}")
         self.curr_rotation = 0
         self.curr_distance = 0
         
@@ -282,7 +287,7 @@ class TrajectorySubscriber(Node):
         # factor (1 - abs(x)) bounded by 0 and 1, meaning they will 
         # be slowed the more sharply we want to turn, and an additional
         # factor to slow even more the speed of the wheels
-        diff_weighted_speed = round(speed * 255 * (1 - abs(x)) * 0.5)
+        diff_weighted_speed = round(speed * 255 * (1 - abs(x)) * 0.2)
         
         if x > 0: #turn left
             self.rf_speed = weighted_speed
