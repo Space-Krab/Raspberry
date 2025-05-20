@@ -86,12 +86,11 @@ class TrajectorySubscriber(Node):
 
             # Compute rotation (angle in degrees)
             angle_deg = ((dist_fr - dist_fl) / WHEEL_BASE_CM) * 180 / 3.1416
-
-            self.get_logger().info(f"Moved {distance_cm:.2f} cm, Rotated {angle_deg:.2f}°")
             
             if self.autonomous_mode:
                 self.curr_distance += distance_cm
                 self.curr_rotation += angle_deg
+                self.get_logger().info(f"Curr: distance = {distance_cm:.2f} cm, Curr rotation = {angle_deg:.2f}°")
                 if self.curr_command == "up":
                     if self.curr_distance >= 30:
                         self.finish_step()
