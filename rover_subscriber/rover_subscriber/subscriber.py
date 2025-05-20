@@ -67,7 +67,6 @@ class TrajectorySubscriber(Node):
     def read_serial(self):
         try:
             line = self.ser.readline().decode().strip()  # e.g., "FL:120,FR:122"
-            self.get_logger().info(line)
             self.ser.reset_input_buffer()
             self.ser.readline()
             if not line.startswith("FL"):
@@ -88,8 +87,6 @@ class TrajectorySubscriber(Node):
 
             # Compute rotation (angle in degrees)
             angle_deg = ((dist_fr - dist_fl) / WHEEL_BASE_CM) * 180 / 3.1416
-            
-            self.get_logger().info(f"Moved: {distance_cm:.2f} cm, Rotated: {angle_deg:.2f}°")
             
             if self.autonomous_mode:
                 self.curr_distance += distance_cm
@@ -261,8 +258,7 @@ class TrajectorySubscriber(Node):
         self.get_logger().info(str(self.lb_direction))
         self.ser.write(self.lb_speed.to_bytes(1, 'little'))
         self.ser.write(self.lb_direction.to_bytes(1, 'little')) #BACK LEFT WHEEL
-        
-        self.get_logger().info("RECEIVED INFO")
+
         self.get_logger().info(self.ser.readline().decode().strip())
         self.get_logger().info(self.ser.readline().decode().strip())
         self.get_logger().info(self.ser.readline().decode().strip())
