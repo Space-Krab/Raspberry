@@ -87,10 +87,12 @@ class TrajectorySubscriber(Node):
             # Compute rotation (angle in degrees)
             angle_deg = ((dist_fr - dist_fl) / WHEEL_BASE_CM) * 180 / 3.1416
             
+            self.get_logger().info(f"Moved: {distance_cm:.2f} cm, Rotated: {angle_deg:.2f}°")
+            
             if self.autonomous_mode:
                 self.curr_distance += distance_cm
                 self.curr_rotation += angle_deg
-                self.get_logger().info(f"Curr: distance = {distance_cm:.2f} cm, Curr rotation = {angle_deg:.2f}°")
+                self.get_logger().info(f"Curr: distance = {self.curr_distance:.2f} cm, Curr rotation = {self.curr_rotation:.2f}°")
                 self.get_logger().info(self.curr_command)
                 if self.curr_command == "up":
                     if self.curr_distance >= 30:
@@ -137,6 +139,8 @@ class TrajectorySubscriber(Node):
 
     def listener_callback(self, msg):
         if self.autonomous_mode:
+            self.get_logger().info("Trying to assign command")
+            self.get_logger().info(f"y = {msg.axes[1]}, x = {msg.axes[0]}")
             if msg.axes[1] == 1:
                 self.curr_command == "up"
             elif msg.axes[1] == -1:
