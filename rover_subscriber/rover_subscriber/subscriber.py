@@ -261,10 +261,10 @@ class TrajectorySubscriber(Node):
         self.ser.write(self.lb_speed.to_bytes(1, 'little'))
         self.ser.write(self.lb_direction.to_bytes(1, 'little')) #BACK LEFT WHEEL
 
-        #self.get_logger().info(self.ser.readline().decode().strip())
-        #self.get_logger().info(self.ser.readline().decode().strip())
-        #self.get_logger().info(self.ser.readline().decode().strip())
-        #self.get_logger().info(self.ser.readline().decode().strip())
+        self.get_logger().info(self.ser.readline().decode().strip())
+        self.get_logger().info(self.ser.readline().decode().strip())
+        self.get_logger().info(self.ser.readline().decode().strip())
+        self.get_logger().info(self.ser.readline().decode().strip())
 
         
     def set_ahead(self):
