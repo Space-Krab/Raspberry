@@ -49,8 +49,6 @@ class TrajectorySubscriber(Node):
         self.mode_timer = self.create_timer(0.02, self.mode_change)
         self.prev_mode_msg = None
         
-        self.prev_motor_state = None
-        
         self.rf_direction = 0 #FRONT RIGHT WHEEL
         self.rf_speed = 0
         
@@ -62,6 +60,9 @@ class TrajectorySubscriber(Node):
         
         self.lb_speed = 0 #BACK LEFT WHEEL
         self.lb_direction = 0
+        
+        self.prev_motor_state = (self.lf_speed, self.lf_direction, self.rf_speed, self.rf_direction,
+                 self.rb_speed, self.rb_direction, self.lb_speed, self.lb_direction)
         
         #Arduino master connected port
         self.ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
@@ -239,24 +240,24 @@ class TrajectorySubscriber(Node):
             return
         self.prev_motor_state = new_state
         
-        #self.get_logger().info("SENT INFO")
-        #self.get_logger().info(str(self.lf_speed))
-        #self.get_logger().info(str(self.lf_direction))
+        self.get_logger().info("SENT INFO")
+        self.get_logger().info(str(self.lf_speed))
+        self.get_logger().info(str(self.lf_direction))
         self.ser.write(self.lf_speed.to_bytes(1, 'little'))
         self.ser.write(self.lf_direction.to_bytes(1, 'little')) #FRONT LEFT WHEEL
 
-        #self.get_logger().info(str(self.rf_speed))
-        #self.get_logger().info(str(self.rf_direction))
+        self.get_logger().info(str(self.rf_speed))
+        self.get_logger().info(str(self.rf_direction))
         self.ser.write(self.rf_speed.to_bytes(1, 'little'))
         self.ser.write(self.rf_direction.to_bytes(1, 'little')) #FRONT RIGHT WHEEL
         
-        #self.get_logger().info(str(self.rb_speed))
-        #self.get_logger().info(str(self.rb_direction))
+        self.get_logger().info(str(self.rb_speed))
+        self.get_logger().info(str(self.rb_direction))
         self.ser.write(self.rb_speed.to_bytes(1, 'little'))
         self.ser.write(self.rb_direction.to_bytes(1, 'little')) #BACK RIGHT WHEEL
         
-        #self.get_logger().info(str(self.lb_speed))
-        #self.get_logger().info(str(self.lb_direction))
+        self.get_logger().info(str(self.lb_speed))
+        self.get_logger().info(str(self.lb_direction))
         self.ser.write(self.lb_speed.to_bytes(1, 'little'))
         self.ser.write(self.lb_direction.to_bytes(1, 'little')) #BACK LEFT WHEEL
 
