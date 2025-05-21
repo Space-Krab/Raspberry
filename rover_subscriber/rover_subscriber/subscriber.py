@@ -4,7 +4,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import Joy
 from std_msgs.msg import String
 import serial
-from math import sqrt
+from math import sqrt, pi
 
 WHEEL_DIAMETER_CM = 11.4
 TICKS_PER_REV = 11
@@ -46,6 +46,8 @@ class TrajectorySubscriber(Node):
         self.curr_command = ""
         self.timer = self.create_timer(0.2, self.read_serial)
         
+        self.prev_motor_state = None
+        
         self.rf_direction = 0 #FRONT RIGHT WHEEL
         self.rf_speed = 0
         
@@ -81,12 +83,12 @@ class TrajectorySubscriber(Node):
             self.prev_fr = fr_ticks
 
             # Compute distances
-            dist_fl = (delta_fl / TICKS_PER_REV) * 3.1416 * WHEEL_DIAMETER_CM
-            dist_fr = (delta_fr / TICKS_PER_REV) * 3.1416 * WHEEL_DIAMETER_CM
+            dist_fl = (delta_fl / TICKS_PER_REV) * pi * WHEEL_DIAMETER_CM
+            dist_fr = (delta_fr / TICKS_PER_REV) * pi * WHEEL_DIAMETER_CM
             distance_cm = (dist_fl + dist_fr) / 2.0
 
             # Compute rotation (angle in degrees)
-            angle_deg = ((dist_fr - dist_fl) / WHEEL_BASE_CM) * 180 / 3.1416
+            angle_deg = ((dist_fr - dist_fl) / WHEEL_BASE_CM) * 180 / pi
             
             if self.autonomous_mode:
                 self.curr_distance += distance_cm
@@ -238,6 +240,12 @@ class TrajectorySubscriber(Node):
         self.curr_distance = 0
         
     def send_data(self):
+        new_state = (self.lf_speed, self.lf_direction, self.rf_speed, self.rf_direction,
+                 self.rb_speed, self.rb_direction, self.lb_speed, self.lb_direction)
+        if new_state == self.prev_motor_state:
+            return
+        self.prev_motor_state = new_state
+        
         self.get_logger().info("SENT INFO")
         self.get_logger().info(str(self.lf_speed))
         self.get_logger().info(str(self.lf_direction))
