@@ -8,7 +8,7 @@ from math import sqrt, pi
 
 WHEEL_DIAMETER_CM = 11.4
 TICKS_PER_REV = 11
-WHEEL_BASE_CM = 27.3
+WHEEL_BASE_CM = 20.0
 
 QOS_PROFILE_JOY = QoSProfile(
     reliability=QoSReliabilityPolicy.BEST_EFFORT,
@@ -46,6 +46,9 @@ class TrajectorySubscriber(Node):
         self.curr_command = ""
         self.timer = self.create_timer(0.2, self.read_serial)
         
+        self.mode_timer = self.create_timer(0.02, self.mode_change)
+        self.prev_mode_msg = None
+        
         self.prev_motor_state = None
         
         self.rf_direction = 0 #FRONT RIGHT WHEEL
@@ -69,6 +72,7 @@ class TrajectorySubscriber(Node):
     def read_serial(self):
         try:
             line = self.ser.readline().decode().strip()  # e.g., "FL:120,FR:122"
+            self.get_logger().info(line)
             self.ser.reset_input_buffer()
             self.ser.readline()
             if not line.startswith("FL"):
@@ -98,37 +102,27 @@ class TrajectorySubscriber(Node):
                 if self.curr_command == "up":
                     if self.curr_distance >= 30:
                         self.finish_step()
-                    else:
-                        self.set_ahead()
-                        self.set_same_speed(1)
-                        self.send_data()
                 elif self.curr_command == "down":
                     if self.curr_distance <= -30:
                         self.finish_step()
-                    else:
-                        self.set_backward()
-                        self.set_same_speed(1)
-                        self.send_data()
                 elif self.curr_command == "left":
                     if self.curr_rotation >= 90:
                         self.finish_step()
-                    else:
-                        self.set_left()
-                        self.set_same_speed(1)
-                        self.send_data()
                 elif self.curr_command == "right":
                     if self.curr_rotation <= -90:
                         self.finish_step()
-                    else:
-                        self.set_right()
-                        self.set_same_speed(1)
-                        self.send_data()
                 
         except Exception as e:
             self.get_logger().error(f"Error reading serial: {e}")
             
     def mode_listener_callback(self, msg):
-        triangle = msg.buttons[2]
+        self.prev_mode_msg = msg
+        
+    def mode_change(self):
+        if self.prev_mode_msg is None:
+            return
+        
+        triangle = self.prev_mode_msg.buttons[2]
 
         # Toggle mode
         if triangle == 1 and self.prev_triangle == 0:
@@ -140,7 +134,6 @@ class TrajectorySubscriber(Node):
 
     def listener_callback(self, msg):
         if self.autonomous_mode:
-            self.get_logger().info("Assigning new command")
             if msg.axes[1] == 1.0:
                 self.curr_command = "up"
             elif msg.axes[1] == -1.0:
@@ -246,31 +239,31 @@ class TrajectorySubscriber(Node):
             return
         self.prev_motor_state = new_state
         
-        self.get_logger().info("SENT INFO")
-        self.get_logger().info(str(self.lf_speed))
-        self.get_logger().info(str(self.lf_direction))
+        #self.get_logger().info("SENT INFO")
+        #self.get_logger().info(str(self.lf_speed))
+        #self.get_logger().info(str(self.lf_direction))
         self.ser.write(self.lf_speed.to_bytes(1, 'little'))
         self.ser.write(self.lf_direction.to_bytes(1, 'little')) #FRONT LEFT WHEEL
 
-        self.get_logger().info(str(self.rf_speed))
-        self.get_logger().info(str(self.rf_direction))
+        #self.get_logger().info(str(self.rf_speed))
+        #self.get_logger().info(str(self.rf_direction))
         self.ser.write(self.rf_speed.to_bytes(1, 'little'))
         self.ser.write(self.rf_direction.to_bytes(1, 'little')) #FRONT RIGHT WHEEL
         
-        self.get_logger().info(str(self.rb_speed))
-        self.get_logger().info(str(self.rb_direction))
+        #self.get_logger().info(str(self.rb_speed))
+        #self.get_logger().info(str(self.rb_direction))
         self.ser.write(self.rb_speed.to_bytes(1, 'little'))
         self.ser.write(self.rb_direction.to_bytes(1, 'little')) #BACK RIGHT WHEEL
         
-        self.get_logger().info(str(self.lb_speed))
-        self.get_logger().info(str(self.lb_direction))
+        #self.get_logger().info(str(self.lb_speed))
+        #self.get_logger().info(str(self.lb_direction))
         self.ser.write(self.lb_speed.to_bytes(1, 'little'))
         self.ser.write(self.lb_direction.to_bytes(1, 'little')) #BACK LEFT WHEEL
 
-        self.get_logger().info(self.ser.readline().decode().strip())
-        self.get_logger().info(self.ser.readline().decode().strip())
-        self.get_logger().info(self.ser.readline().decode().strip())
-        self.get_logger().info(self.ser.readline().decode().strip())
+        #self.get_logger().info(self.ser.readline().decode().strip())
+        #self.get_logger().info(self.ser.readline().decode().strip())
+        #self.get_logger().info(self.ser.readline().decode().strip())
+        #self.get_logger().info(self.ser.readline().decode().strip())
 
         
     def set_ahead(self):
@@ -327,7 +320,7 @@ class TrajectorySubscriber(Node):
         # factor (1 - abs(x)) bounded by 0 and 1, meaning they will 
         # be slowed the more sharply we want to turn, and an additional
         # factor to slow even more the speed of the wheels
-        diff_weighted_speed = round(speed * 255 * (1 - abs(x)) * 0.2)
+        diff_weighted_speed = round(speed * 255 * (1 - abs(x)) * 0.15)
         
         if x > 0: #turn left
             self.rf_speed = weighted_speed
