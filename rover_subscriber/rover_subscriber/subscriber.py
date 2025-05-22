@@ -7,8 +7,9 @@ import serial
 from math import sqrt, pi
 
 WHEEL_DIAMETER_CM = 11.4
-TICKS_PER_REV = 11
-WHEEL_BASE_CM = 20.0
+TICKS_PER_REV_RIGHT = 374
+TICKS_PER_REV_LEFT = 374
+WHEEL_BASE_CM = 27.0
 
 QOS_PROFILE_JOY = QoSProfile(
     reliability=QoSReliabilityPolicy.BEST_EFFORT,
@@ -39,6 +40,7 @@ class TrajectorySubscriber(Node):
         
         self.autonomous_mode = False
         self.prev_triangle = 0
+
         self.prev_fl = 0
         self.prev_fr = 0
         self.curr_rotation = 0
@@ -66,34 +68,45 @@ class TrajectorySubscriber(Node):
         
         #Arduino master connected port
         self.ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+        line = self.ser.readline().decode().strip()  # e.g., "FL:120,FR:122"
+        if line.startswith("FL"):
+            self.prev_fl = int(line.split(",")[0].split(":")[1])
+            self.prev_fr = int(line.split(",")[1].split(":")[1])
         self.ser.reset_input_buffer()
         self.get_logger().info('Subscriber node has been started.')
+
+        
         
         
     def read_serial(self):
         try:
             line = self.ser.readline().decode().strip()  # e.g., "FL:120,FR:122"
-            self.get_logger().info(line)
-            #self.ser.reset_input_buffer()
-            #self.ser.readline()
+            self.ser.reset_input_buffer()
+            self.ser.readline()
             if not line.startswith("FL"):
                 return
             fl_ticks = int(line.split(",")[0].split(":")[1])
             fr_ticks = int(line.split(",")[1].split(":")[1])
+            #self.get_logger().info("Ticks FL: " + str(fl_ticks))
+            #self.get_logger().info("Ticks FR: " + str(fr_ticks))
 
             # Compute deltas
             delta_fl = fl_ticks - self.prev_fl
             delta_fr = fr_ticks - self.prev_fr
+            #self.get_logger().info("Tours gauche: " + str(delta_fl / TICKS_PER_REV_LEFT))
+            #self.get_logger().info("Tours droite: " + str(delta_fr / TICKS_PER_REV_RIGHT))
             self.prev_fl = fl_ticks
             self.prev_fr = fr_ticks
 
             # Compute distances
-            dist_fl = (delta_fl / TICKS_PER_REV) * pi * WHEEL_DIAMETER_CM
-            dist_fr = (delta_fr / TICKS_PER_REV) * pi * WHEEL_DIAMETER_CM
-            distance_cm = (dist_fl + dist_fr) / 2.0
+            dist_fl = (delta_fl / TICKS_PER_REV_LEFT) * pi * WHEEL_DIAMETER_CM
+            dist_fr = (delta_fr / TICKS_PER_REV_RIGHT) * pi * WHEEL_DIAMETER_CM
+            distance_cm = (dist_fl - dist_fr) / 2.0
+            #self.get_logger().info("Distance: " + str(distance_cm))
 
             # Compute rotation (angle in degrees)
-            angle_deg = ((dist_fr - dist_fl) / WHEEL_BASE_CM) * 180 / pi
+            angle_deg = ((dist_fr - dist_fl) / WHEEL_BASE_CM) * 180 / pi * 4.2
+            #self.get_logger().info("Angle: " + str(angle_deg))
             
             if self.autonomous_mode:
                 self.curr_distance += distance_cm
@@ -101,10 +114,10 @@ class TrajectorySubscriber(Node):
                 self.get_logger().info(f"Curr: distance = {self.curr_distance:.2f} cm, Curr rotation = {self.curr_rotation:.2f}°")
                 self.get_logger().info(self.curr_command)
                 if self.curr_command == "up":
-                    if self.curr_distance >= 30:
+                    if self.curr_distance >= 100:
                         self.finish_step()
                 elif self.curr_command == "down":
-                    if self.curr_distance <= -30:
+                    if self.curr_distance <= -100:
                         self.finish_step()
                 elif self.curr_command == "left":
                     if self.curr_rotation >= 90:
@@ -128,12 +141,16 @@ class TrajectorySubscriber(Node):
         # Toggle mode
         if triangle == 1 and self.prev_triangle == 0:
             self.autonomous_mode = not self.autonomous_mode
+            self.curr_command = ""
+            self.curr_distance = 0
+            self.curr_rotation = 0
             mode = "autonome" if self.autonomous_mode else "manuel"
             self.get_logger().info(f"Mode changé : {mode}")
         
         self.prev_triangle = triangle
 
     def listener_callback(self, msg):
+        self.get_logger().info("Received command")
         if self.autonomous_mode:
             if msg.axes[1] == 1.0:
                 self.curr_command = "up"
