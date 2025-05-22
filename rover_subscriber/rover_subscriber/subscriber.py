@@ -51,6 +51,10 @@ class TrajectorySubscriber(Node):
         self.mode_timer = self.create_timer(0.02, self.mode_change)
         self.prev_mode_msg = None
         
+        self.arm_height = 0
+        self.arm_length = 0
+        self.claw_opening = 0
+        
         self.rf_direction = 0 #FRONT RIGHT WHEEL
         self.rf_speed = 0
         
@@ -64,7 +68,8 @@ class TrajectorySubscriber(Node):
         self.lb_direction = 0
         
         self.prev_motor_state = (self.lf_speed, self.lf_direction, self.rf_speed, self.rf_direction,
-                 self.rb_speed, self.rb_direction, self.lb_speed, self.lb_direction)
+                 self.rb_speed, self.rb_direction, self.lb_speed, self.lb_direction, self.arm_height,
+                 self.arm_length, self.claw_opening)
         
         #Arduino master connected port
         self.ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
@@ -87,14 +92,11 @@ class TrajectorySubscriber(Node):
                 return
             fl_ticks = int(line.split(",")[0].split(":")[1])
             fr_ticks = int(line.split(",")[1].split(":")[1])
-            #self.get_logger().info("Ticks FL: " + str(fl_ticks))
-            #self.get_logger().info("Ticks FR: " + str(fr_ticks))
 
             # Compute deltas
             delta_fl = fl_ticks - self.prev_fl
             delta_fr = fr_ticks - self.prev_fr
-            #self.get_logger().info("Tours gauche: " + str(delta_fl / TICKS_PER_REV_LEFT))
-            #self.get_logger().info("Tours droite: " + str(delta_fr / TICKS_PER_REV_RIGHT))
+
             self.prev_fl = fl_ticks
             self.prev_fr = fr_ticks
 
@@ -102,7 +104,6 @@ class TrajectorySubscriber(Node):
             dist_fl = (delta_fl / TICKS_PER_REV_LEFT) * pi * WHEEL_DIAMETER_CM
             dist_fr = (delta_fr / TICKS_PER_REV_RIGHT) * pi * WHEEL_DIAMETER_CM
             distance_cm = (dist_fl - dist_fr) / 2.0
-            #self.get_logger().info("Distance: " + str(distance_cm))
 
             # Compute rotation (angle in degrees)
             angle_deg = ((-dist_fr - dist_fl) / WHEEL_BASE_CM) * 180 / pi
@@ -159,6 +160,38 @@ class TrajectorySubscriber(Node):
                 self.curr_command = "left"
             elif msg.axes[0] == -1.0:
                 self.curr_command = "right"
+                
+        #ARM HEIGHT MANAGEMENT
+        hauteur = msg.axes[3]
+        
+        if hauteur >= 0.5:
+            self.arm_height = 1
+        elif hauteur <= -0.5:
+            self.arm_height = 255
+        else:
+            self.arm_height = 0
+            
+        # ARM LENGTH MANAGEMENT
+        add_length = msg.axes[4] #R2
+        decrease_length = -msg.buttons[5] #R1
+        
+        if add_length <= 0:
+            add_length = 1
+        else:
+            add_length = 0
+            
+        self.arm_length = add_length + decrease_length if add_length + decrease_length >= 0 else 255
+        
+        #CLAW OPENING MANAGEMENT
+        close_claw = msg.buttons[4] #L1
+        open_claw = msg.axes[3] #L2
+        
+        if open_claw <= 0:
+            open_claw = 1
+        else:
+            open_claw = 0
+            
+        self.claw_opening = open_claw + close_claw if open_claw + close_claw >= 0 else 255
         
         x = msg.axes[0] # x-axis of left joystick
         
@@ -251,7 +284,8 @@ class TrajectorySubscriber(Node):
         
     def send_data(self):
         new_state = (self.lf_speed, self.lf_direction, self.rf_speed, self.rf_direction,
-                 self.rb_speed, self.rb_direction, self.lb_speed, self.lb_direction)
+                 self.rb_speed, self.rb_direction, self.lb_speed, self.lb_direction, self.arm_height,
+                 self.arm_length, self.claw_opening)
         if new_state == self.prev_motor_state:
             return
         self.prev_motor_state = new_state
@@ -268,6 +302,10 @@ class TrajectorySubscriber(Node):
         
         self.ser.write(self.lb_speed.to_bytes(1, 'little'))
         self.ser.write(self.lb_direction.to_bytes(1, 'little')) #BACK LEFT WHEEL
+        
+        self.ser.write(self.arm_height.to_bytes(1, 'little')) #ARM HEIGHT
+        self.ser.write(self.arm_length.to_bytes(1, 'little')) #ARM LENGTH
+        self.ser.write(self.claw_opening.to_bytes(1, 'little')) #CLAW OPENING
 
         
     def set_ahead(self):
