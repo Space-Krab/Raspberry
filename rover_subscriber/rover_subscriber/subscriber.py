@@ -105,8 +105,7 @@ class TrajectorySubscriber(Node):
             #self.get_logger().info("Distance: " + str(distance_cm))
 
             # Compute rotation (angle in degrees)
-            angle_deg = ((dist_fr - dist_fl) / WHEEL_BASE_CM) * 180 / pi * 4.2
-            #self.get_logger().info("Angle: " + str(angle_deg))
+            angle_deg = ((-dist_fr - dist_fl) / WHEEL_BASE_CM) * 180 / pi
             
             if self.autonomous_mode:
                 self.curr_distance += distance_cm
