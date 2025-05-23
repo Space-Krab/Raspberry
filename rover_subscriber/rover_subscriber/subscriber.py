@@ -67,9 +67,6 @@ class TrajectorySubscriber(Node):
         self.lb_speed = 0 #BACK LEFT WHEEL
         self.lb_direction = 0
         
-        self.prev_motor_state = (self.lf_speed, self.lf_direction, self.rf_speed, self.rf_direction,
-                 self.rb_speed, self.rb_direction, self.lb_speed, self.lb_direction)
-        
         #Arduino master connected port
         self.ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
         line = self.ser.readline().decode().strip()  # e.g., "FL:120,FR:122"
@@ -78,8 +75,6 @@ class TrajectorySubscriber(Node):
             self.prev_fr = int(line.split(",")[1].split(":")[1])
         self.ser.reset_input_buffer()
         self.get_logger().info('Subscriber node has been started.')
-
-        
         
         
     def read_serial(self):
@@ -282,12 +277,6 @@ class TrajectorySubscriber(Node):
         self.curr_distance = 0
         
     def send_data(self):
-        """new_state = (self.lf_speed, self.lf_direction, self.rf_speed, self.rf_direction,
-                 self.rb_speed, self.rb_direction, self.lb_speed, self.lb_direction)
-        if new_state == self.prev_motor_state:
-            return
-        self.prev_motor_state = new_state"""
-        
         self.get_logger().info("COMMAND SENT")
         self.ser.write(self.lf_speed.to_bytes(1, 'little'))
         self.ser.write(self.lf_direction.to_bytes(1, 'little')) #FRONT LEFT WHEEL
@@ -363,7 +352,7 @@ class TrajectorySubscriber(Node):
         # factor (1 - abs(x)) bounded by 0 and 1, meaning they will 
         # be slowed the more sharply we want to turn, and an additional
         # factor to slow even more the speed of the wheels
-        diff_weighted_speed = round(speed * 255 * (1 - abs(x)) * 0.15)
+        diff_weighted_speed = round(speed * 255 * (1 - abs(x)) * 0.1)
         
         if x > 0: #turn left
             self.rf_speed = weighted_speed
