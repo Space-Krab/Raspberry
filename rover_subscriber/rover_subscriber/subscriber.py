@@ -68,8 +68,7 @@ class TrajectorySubscriber(Node):
         self.lb_direction = 0
         
         self.prev_motor_state = (self.lf_speed, self.lf_direction, self.rf_speed, self.rf_direction,
-                 self.rb_speed, self.rb_direction, self.lb_speed, self.lb_direction, self.arm_height,
-                 self.arm_length, self.claw_opening)
+                 self.rb_speed, self.rb_direction, self.lb_speed, self.lb_direction)
         
         #Arduino master connected port
         self.ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
@@ -162,7 +161,7 @@ class TrajectorySubscriber(Node):
                 self.curr_command = "right"
                 
         #ARM HEIGHT MANAGEMENT
-        hauteur = msg.axes[3]
+        hauteur = msg.axes[4]
         
         if hauteur >= 0.5:
             self.arm_height = 1
@@ -172,7 +171,7 @@ class TrajectorySubscriber(Node):
             self.arm_height = 0
             
         # ARM LENGTH MANAGEMENT
-        add_length = msg.axes[4] #R2
+        add_length = msg.axes[5] #R2
         decrease_length = -msg.buttons[5] #R1
         
         if add_length <= 0:
@@ -183,8 +182,8 @@ class TrajectorySubscriber(Node):
         self.arm_length = add_length + decrease_length if add_length + decrease_length >= 0 else 255
         
         #CLAW OPENING MANAGEMENT
-        close_claw = msg.buttons[4] #L1
-        open_claw = msg.axes[3] #L2
+        close_claw = -msg.buttons[4] #L1
+        open_claw = msg.axes[2] #L2
         
         if open_claw <= 0:
             open_claw = 1
@@ -283,12 +282,11 @@ class TrajectorySubscriber(Node):
         self.curr_distance = 0
         
     def send_data(self):
-        new_state = (self.lf_speed, self.lf_direction, self.rf_speed, self.rf_direction,
-                 self.rb_speed, self.rb_direction, self.lb_speed, self.lb_direction, self.arm_height,
-                 self.arm_length, self.claw_opening)
+        """new_state = (self.lf_speed, self.lf_direction, self.rf_speed, self.rf_direction,
+                 self.rb_speed, self.rb_direction, self.lb_speed, self.lb_direction)
         if new_state == self.prev_motor_state:
             return
-        self.prev_motor_state = new_state
+        self.prev_motor_state = new_state"""
         
         self.get_logger().info("COMMAND SENT")
         self.ser.write(self.lf_speed.to_bytes(1, 'little'))
@@ -306,6 +304,9 @@ class TrajectorySubscriber(Node):
         self.ser.write(self.arm_height.to_bytes(1, 'little')) #ARM HEIGHT
         self.ser.write(self.arm_length.to_bytes(1, 'little')) #ARM LENGTH
         self.ser.write(self.claw_opening.to_bytes(1, 'little')) #CLAW OPENING
+        self.get_logger().info("Height comm : " + str(self.arm_height))
+        self.get_logger().info("Length comm : " + str(self.arm_length))
+        self.get_logger().info("Claw comm : " + str(self.claw_opening))
 
         
     def set_ahead(self):
