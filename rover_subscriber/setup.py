@@ -22,7 +22,7 @@ setup(
         'console_scripts': [
             'live_subscriber = rover_subscriber.new_subscriber:main',
             'subscriber = rover_subscriber.subscriber:main',
-            'camera = rover_subscriber.camera_sub:main',
+            'camera = rover_subscriber.camera_pub:main',
         ],
     },
 )
